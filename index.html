@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Clothing Try-On</title>
+    <title>AI-Powered Clothing Try-On</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,7 +36,7 @@
 </head>
 <body>
 
-    <h2>2D Clothing Try-On</h2>
+    <h2>AI-Powered 2D Clothing Try-On</h2>
 
     <label>Upload User Image:</label>
     <input type="file" id="uploadUserImage" accept="image/*">
@@ -58,6 +58,7 @@
         const userImage = document.getElementById("userImage");
         const clothingImage = document.getElementById("clothingImage");
         const canvasContainer = document.getElementById("canvas-container");
+        const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"; // Replace with your actual API Key
 
         // Load user image
         userImageInput.addEventListener("change", function(event) {
@@ -69,15 +70,45 @@
             }
         });
 
-        // Load clothing image
-        clothingImageInput.addEventListener("change", function(event) {
+        // Load and process clothing image (remove background)
+        clothingImageInput.addEventListener("change", async function(event) {
             const file = event.target.files[0];
             if (file) {
-                clothingImage.src = URL.createObjectURL(file);
-                clothingImage.onload = adjustClothingPosition; // Adjust clothing after it loads
-                clothingImage.style.display = "block";
+                const base64Image = await convertToBase64(file);
+                removeBackground(base64Image);
             }
         });
+
+        // Convert file to Base64
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Remove 'data:image/png;base64,'
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Call Gemini API to remove background
+        async function removeBackground(base64Image) {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "Remove background from this clothing image while keeping all details intact.",
+                    image: base64Image
+                })
+            });
+
+            const data = await response.json();
+            if (data && data.image) {
+                clothingImage.src = `data:image/png;base64,${data.image}`;
+                clothingImage.onload = adjustClothingPosition;
+                clothingImage.style.display = "block";
+            } else {
+                alert("Failed to remove background.");
+            }
+        }
 
         // Automatically position & resize clothing image
         function adjustClothingPosition() {
@@ -87,7 +118,7 @@
             const userWidth = userImage.clientWidth;
             const userHeight = userImage.clientHeight;
 
-            // Adjust clothing size (50% of user image width)
+            // Adjust clothing size (60% of user image width)
             clothingImage.style.width = (userWidth * 0.6) + "px";
             clothingImage.style.height = "auto";
 
