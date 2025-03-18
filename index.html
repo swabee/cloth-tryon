@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Clothing Try-On</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        #canvas-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            border: 2px solid #ddd;
+            margin: 20px auto;
+            background-color: white;
+            overflow: hidden;
+        }
+        #userImage, #clothingImage {
+            position: absolute;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #clothingImage {
+            display: none;
+        }
+        input {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>2D Clothing Try-On</h2>
+
+    <label>Upload User Image:</label>
+    <input type="file" id="uploadUserImage" accept="image/*">
+
+    <label>Upload Clothing Image:</label>
+    <input type="file" id="uploadClothingImage" accept="image/*">
+
+    <div id="canvas-container">
+        <img id="userImage" alt="User Image">
+        <img id="clothingImage" alt="Clothing Image">
+    </div>
+
+    <button onclick="downloadImage()">Download Try-On Image</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const userImageInput = document.getElementById("uploadUserImage");
+        const clothingImageInput = document.getElementById("uploadClothingImage");
+        const userImage = document.getElementById("userImage");
+        const clothingImage = document.getElementById("clothingImage");
+        const canvasContainer = document.getElementById("canvas-container");
+
+        // Load user image
+        userImageInput.addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                userImage.src = URL.createObjectURL(file);
+                userImage.onload = adjustClothingPosition; // Adjust clothing after user image loads
+                userImage.style.display = "block";
+            }
+        });
+
+        // Load clothing image
+        clothingImageInput.addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                clothingImage.src = URL.createObjectURL(file);
+                clothingImage.onload = adjustClothingPosition; // Adjust clothing after it loads
+                clothingImage.style.display = "block";
+            }
+        });
+
+        // Automatically position & resize clothing image
+        function adjustClothingPosition() {
+            if (!userImage.src || !clothingImage.src) return;
+
+            // Get dimensions of user image
+            const userWidth = userImage.clientWidth;
+            const userHeight = userImage.clientHeight;
+
+            // Adjust clothing size (50% of user image width)
+            clothingImage.style.width = (userWidth * 0.6) + "px";
+            clothingImage.style.height = "auto";
+
+            // Center clothing on user image
+            clothingImage.style.left = (userWidth * 0.2) + "px";
+            clothingImage.style.top = (userHeight * 0.35) + "px";
+        }
+
+        // Download final try-on image
+        function downloadImage() {
+            html2canvas(canvasContainer).then(canvas => {
+                let link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
+                link.download = "try-on.png";
+                link.click();
+            });
+        }
+    </script>
+
+</body>
+</html>
